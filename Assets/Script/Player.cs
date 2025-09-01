@@ -1,108 +1,69 @@
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    public float moveSpeed = 3f;      // 移動速度
-    public Grid gridManager;          // Gridスクリプト
-    public Animator animator;         // アニメーション
-    public float dropLockTime = 1.5f; // 床落とし中の移動禁止時間
-    public float dropCooldown = 3f;   // 床落としの再使用までの時間
-    public Vector3 respawnPosition;   // 復活位置
-    public float respawnDelay = 2f;   // 復活までの時間
+    public float moveSpeed = 5f;           // プレイヤーの移動速度
+    public float dropCooldown = 2f;        // 床落としのクールタイム
+    public float tileDropInterval = 0.3f;  // 1ブロックごとの落下間隔
+    private float dropTimer = 0f;
 
-    private bool isMoving = false;    // 移動中か
-    private bool isDropping = false;  // 床落とし中か
-    private bool dropOnCooldown = false; // 床落とし再使用待ち中か
-    private bool isDead = false;      // 落下中か
-    private Vector3 targetPosition;   // 次の移動先
-
-    void Start()
-    {
-        respawnPosition = transform.position; // 最初の位置を保存
-    }
+    private Vector3 moveDirection;
+    private bool isMoving = false;
 
     void Update()
     {
-        // 落下チェック
-        if (!isDead && transform.position.y < -2f)
+        // 移動入力（上下左右1方向のみ）
+        if (!isMoving)
         {
-            StartCoroutine(RespawnPlayer());
+            if (Input.GetKey(KeyCode.W)) { moveDirection = Vector3.forward; StartCoroutine(Move()); }
+            else if (Input.GetKey(KeyCode.S)) { moveDirection = Vector3.back; StartCoroutine(Move()); }
+            else if (Input.GetKey(KeyCode.A)) { moveDirection = Vector3.left; StartCoroutine(Move()); }
+            else if (Input.GetKey(KeyCode.D)) { moveDirection = Vector3.right; StartCoroutine(Move()); }
         }
 
-        if (isDead) return;
-
-        // 床落とし処理
-        if (Input.GetKeyDown(KeyCode.P) && !dropOnCooldown)
+        // 床落とし
+        dropTimer -= Time.deltaTime;
+        if (Input.GetKeyDown(KeyCode.P) && dropTimer <= 0f)
         {
-            StartCoroutine(DropFloor());
+            StartCoroutine(DropTilesInFront());
+            dropTimer = dropCooldown;
         }
-
-        // 移動中は移動継続
-        if (isMoving)
-        {
-            MoveToTarget();
-            return;
-        }
-
-        // 上下左右1方向のみ受付
-        if (Input.GetKey(KeyCode.W)) StartMove(Vector3.forward);
-        else if (Input.GetKey(KeyCode.S)) StartMove(Vector3.back);
-        else if (Input.GetKey(KeyCode.A)) StartMove(Vector3.left);
-        else if (Input.GetKey(KeyCode.D)) StartMove(Vector3.right);
     }
 
-    void StartMove(Vector3 direction)
+    private IEnumerator Move()
     {
-        targetPosition = transform.position + direction;
-        transform.forward = direction; // 向きを変える
         isMoving = true;
-    }
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = startPos + moveDirection;
 
-    void MoveToTarget()
-    {
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-        // 目的地についたら停止
-        if (Vector3.Distance(transform.position, targetPosition) < 0.01f)
+        float elapsed = 0f;
+        while (elapsed < 1f)
         {
-            transform.position = targetPosition;
-            isMoving = false;
+            transform.position = Vector3.Lerp(startPos, targetPos, elapsed);
+            elapsed += Time.deltaTime * moveSpeed;
+            yield return null;
         }
-    }
-
-    IEnumerator DropFloor()
-    {
-        isDropping = true;
-        dropOnCooldown = true;
-
-        if (animator != null)
-            animator.SetTrigger("Drop");
-
-        int playerX = Mathf.RoundToInt(transform.position.x / gridManager.spacing);
-        int playerZ = Mathf.RoundToInt(transform.position.z / gridManager.spacing);
-
-        gridManager.DropLineFromFront(playerX, playerZ, transform.forward);
-
-        yield return new WaitForSeconds(dropLockTime);
-        isDropping = false;
-
-        yield return new WaitForSeconds(dropCooldown - dropLockTime);
-        dropOnCooldown = false;
-    }
-
-
-    IEnumerator RespawnPlayer()
-    {
-        isDead = true;
-        GetComponent<Renderer>().enabled = false; // 見た目を消す
+        transform.position = targetPos;
         isMoving = false;
-        isDropping = false;
+    }
 
-        yield return new WaitForSeconds(respawnDelay);
+    // プレイヤーの正面方向のタイルを1つずつ落とす
+    private IEnumerator DropTilesInFront()
+    {
+        // 正面方向にRayを飛ばしてタイルを順番に取得
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, moveDirection, 10f);
 
-        transform.position = respawnPosition;
-        GetComponent<Renderer>().enabled = true; // 見た目を戻す
-        isDead = false;
+        // 当たったオブジェクトを順番に処理
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider.CompareTag("Tile"))
+            {
+                GameObject tile = hit.collider.gameObject;
+                tile.SetActive(false); // 即座に非表示（落下の代わり）
+                yield return new WaitForSeconds(tileDropInterval);
+            }
+        }
     }
 }
