@@ -12,10 +12,11 @@ GameObject:
   - component: {fileID: 6869851080594473673}
   - component: {fileID: 6476479134619601930}
   - component: {fileID: 7885660255246566870}
-  - component: {fileID: 8180615415034474679}
-  m_Layer: 0
+  - component: {fileID: 1801568762600107343}
+  - component: {fileID: -4044875312979842336}
+  m_Layer: 6
   m_Name: Stage1
-  m_TagString: Untagged
+  m_TagString: Block
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -106,16 +107,32 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8180615415034474679
+--- !u!114 &1801568762600107343
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3885829702837715226}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34191d91f41e5ed4e8d0fa155df7a757, type: 3}
+  m_Script: {fileID: 11500000, guid: 61f2ac18de3f18f4e835938587970bd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  breaktime: 2
+  FallThreshold: 2
+  reviveTime: 4
+--- !u!111 &-4044875312979842336
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3885829702837715226}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 0}
+  m_Animations: []
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_CullingType: 0
